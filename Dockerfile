@@ -22,6 +22,7 @@ RUN mix deps.compile
 
 # アプリケーションコードと設定をコピー
 COPY lib ./lib
+COPY config ./config
 COPY cities.yaml ./
 
 # リリースの作成
