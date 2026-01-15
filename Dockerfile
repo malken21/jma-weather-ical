@@ -1,5 +1,5 @@
-# Build Stage
-FROM elixir:1.15-otp-24-alpine AS builder
+# ビルドステージ
+FROM elixir:alpine AS builder
 
 # 環境をプロダクションに設定
 ENV MIX_ENV=prod
@@ -36,7 +36,7 @@ RUN echo '#!/bin/sh' > WeatherGen && \
     echo 'exec /app/bin/weather_gen eval "WeatherGen.main()"' >> WeatherGen && \
     chmod +x WeatherGen
 
-# Runtime Stage
+# ランタイムステージ
 FROM alpine:latest AS runtime
 
 # 実行に必要なランタイムライブラリをインストール

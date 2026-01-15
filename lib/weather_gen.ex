@@ -51,17 +51,17 @@ defmodule WeatherGen do
   end
 
   defmodule ICS do
-    def generate(events) do
+    def generate(events, city_name_en, city_name_jp) do
       dtstamp = DateTime.utc_now() |> Calendar.strftime("%Y%m%dT%H%M%SZ")
 
       events_content = Enum.map(events, fn evt ->
         """
         BEGIN:VEVENT
-        UID:#{UUID.uuid4()}
-        DTSTAMP:#{dtstamp}
-        DTSTART;VALUE=DATE:#{evt.start_date}
-        SUMMARY:#{evt.summary}
+        UID:#{evt.uid}
         DESCRIPTION:#{evt.description}
+        DTSTART;VALUE=DATE:#{evt.start_date}
+        DTEND;VALUE=DATE:#{evt.end_date}
+        SUMMARY:#{evt.summary}
         END:VEVENT
         """
         |> String.trim()
@@ -71,40 +71,26 @@ defmodule WeatherGen do
       """
       BEGIN:VCALENDAR
       VERSION:2.0
-      PRODID:-//JMA Weather Gen//EN
+      PRODID:jma-weather-ical
       CALSCALE:GREGORIAN
       METHOD:PUBLISH
-      X-WR-CALNAME:JMA Forecast
+      X-WR-CALNAME:週間天気予報 #{city_name_jp}
       X-WR-TIMEZONE:Asia/Tokyo
       #{events_content}
+      BEGIN:VTIMEZONE
+      TZID:Asia/Tokyo
+      BEGIN:STANDARD
+      DTSTART:19700101T000000
+      TZOFFSETFROM:+0900
+      TZOFFSETTO:+0900
+      END:STANDARD
+      END:VTIMEZONE
       END:VCALENDAR
       """
       |> String.trim()
       |> String.split("\n")
       |> Enum.map(&String.trim/1)
-      |> Enum.map(&fold_line/1)
       |> Enum.join("\r\n")
-    end
-
-    defp fold_line(line) do
-      fold_line(line, 75)
-    end
-
-    defp fold_line(line, limit) do
-      if byte_size(line) <= limit do
-        line
-      else
-        {head, tail} = split_string_at_bytes(line, limit)
-        head <> "\r\n " <> fold_line(tail, 74)
-      end
-    end
-
-    defp split_string_at_bytes(str, limit) do
-      if String.valid?(binary_part(str, 0, limit)) do
-        {binary_part(str, 0, limit), binary_part(str, limit, byte_size(str) - limit)}
-      else
-        split_string_at_bytes(str, limit - 1)
-      end
     end
   end
 
@@ -115,27 +101,125 @@ defmodule WeatherGen do
       "100" => "晴れ",
       "101" => "晴れ時々くもり",
       "102" => "晴れ一時雨",
-      "104" => "晴れ時々雪",
-      "110" => "時々晴れ",
-      "111" => "くもり時々晴れ",
-      "112" => "くもり一時雨",
-      "114" => "くもり一時雪",
+      "103" => "晴れ時々雨",
+      "104" => "晴れ一時雪",
+      "105" => "晴れ時々雪",
+      "106" => "晴れ一時雨か雪",
+      "107" => "晴れ時々雨か雪",
+      "108" => "晴れ一時雨か雷雨",
+      "110" => "晴れのち時々くもり",
+      "111" => "晴れのちくもり",
+      "112" => "晴れのち一時雨",
+      "113" => "晴れのち時々雨",
+      "114" => "晴れのち雨",
+      "115" => "晴れのち一時雪",
+      "116" => "晴れのち時々雪",
+      "117" => "晴れのち雪",
+      "118" => "晴れのち雨か雪",
+      "119" => "晴れのち雨か雷雨",
+      "120" => "晴れ朝夕一時雨",
+      "121" => "晴れ朝の内一時雨",
+      "122" => "晴れ夕方一時雨",
+      "123" => "晴れ山沿い雷雨",
+      "124" => "晴れ山沿い雪",
+      "125" => "晴れ午後は雷雨",
+      "126" => "晴れ昼頃から雨",
+      "127" => "晴れ夕方から雨",
+      "128" => "晴れ夜は雨",
+      "129" => "晴れ夜半から雨",
+      "130" => "朝の内霧後晴れ",
+      "131" => "晴れ明け方霧",
+      "132" => "晴れ朝夕くもり",
+      "140" => "晴れ時々雨で雷を伴う",
+      "160" => "晴れ一時雪か雨",
+      "170" => "晴れ時々雪か雨",
+      "181" => "晴れのち雪か雨",
       "200" => "くもり",
-      "201" => "くもり時々晴れ",
+      "201" => "くもり時々晴",
       "202" => "くもり一時雨",
+      "203" => "くもり時々雨",
       "204" => "くもり一時雪",
-      "210" => "くもり後晴れ",
-      "211" => "くもり後晴れ",
-      "212" => "くもり後雨",
-      "214" => "くもり後雪",
+      "205" => "くもり時々雪",
+      "206" => "くもり一時雨か雪",
+      "207" => "くもり時々雨か雪",
+      "208" => "くもり一時雨か雷雨",
+      "209" => "霧",
+      "210" => "くもりのち時々晴れ",
+      "211" => "くもりのち晴れ",
+      "212" => "くもりのち一時雨",
+      "213" => "くもりのち時々雨",
+      "214" => "くもりのち雨",
+      "215" => "くもりのち一時雪",
+      "216" => "くもりのち時々雪",
+      "217" => "くもりのち雪",
+      "218" => "くもりのち雨か雪",
+      "219" => "くもりのち雨か雷雨",
+      "220" => "くもり朝夕一時雨",
+      "221" => "くもり朝の内一時雨",
+      "222" => "くもり夕方一時雨",
+      "223" => "くもり日中時々晴れ",
+      "224" => "くもり昼頃から雨",
+      "225" => "くもり夕方から雨",
+      "226" => "くもり夜は雨",
+      "227" => "くもり夜半から雨",
+      "228" => "くもり昼頃から雪",
+      "229" => "くもり夕方から雪",
+      "230" => "くもり夜は雪",
+      "231" => "くもり海上海岸は霧か霧雨",
+      "240" => "くもり時々雨で雷を伴う",
+      "250" => "くもり時々雪で雷を伴う",
+      "260" => "くもり一時雪か雨",
+      "270" => "くもり時々雪か雨",
+      "281" => "くもりのち雪か雨",
       "300" => "雨",
       "301" => "雨時々晴れ",
-      "302" => "雨時々くもり",
-      "303" => "雨一時雪",
+      "302" => "雨時々止む",
+      "303" => "雨時々雪",
+      "304" => "雨か雪",
+      "306" => "大雨",
+      "307" => "風雨共に強い",
+      "308" => "雨で暴風を伴う",
+      "309" => "雨一時雪",
+      "311" => "雨のち晴れ",
+      "313" => "雨のちくもり",
+      "314" => "雨のち時々雪",
+      "315" => "雨のち雪",
+      "316" => "雨か雪のち晴れ",
+      "317" => "雨か雪のちくもり",
+      "320" => "朝の内雨のち晴れ",
+      "321" => "朝の内雨のちくもり",
+      "322" => "雨朝晩一時雪",
+      "323" => "雨昼頃から晴れ",
+      "324" => "雨夕方から晴れ",
+      "325" => "雨夜は晴",
+      "326" => "雨夕方から雪",
+      "327" => "雨夜は雪",
+      "328" => "雨一時強く降る",
+      "329" => "雨一時みぞれ",
+      "340" => "雪か雨",
+      "350" => "雨で雷を伴う",
+      "361" => "雪か雨のち晴れ",
+      "371" => "雪か雨のちくもり",
       "400" => "雪",
       "401" => "雪時々晴れ",
-      "402" => "雪時々くもり",
-      "403" => "雪一時雨"
+      "402" => "雪時々止む",
+      "403" => "雪時々雨",
+      "405" => "大雪",
+      "406" => "風雪強い",
+      "407" => "暴風雪",
+      "409" => "雪一時雨",
+      "411" => "雪のち晴れ",
+      "413" => "雪のちくもり",
+      "414" => "雪のち雨",
+      "420" => "朝の内雪のち晴れ",
+      "421" => "朝の内雪のちくもり",
+      "422" => "雪昼頃から雨",
+      "423" => "雪夕方から雨",
+      "424" => "雪夜半から雨",
+      "425" => "雪一時強く降る",
+      "426" => "雪のちみぞれ",
+      "427" => "雪一時みぞれ",
+      "450" => "雪で雷を伴う"
     }
 
     def run(output_dir \\ "dist") do
@@ -144,23 +228,38 @@ defmodule WeatherGen do
       if cities == %{} do
         Logger.warning("No cities found in config. Exiting.")
       else
-        for {city, code} <- cities do
-          Logger.info("Processing #{city} (#{code})...")
+        for {city_en, code} <- cities do
+          Logger.info("Processing #{city_en} (#{code})...")
           with data when not is_nil(data) <- WeatherGen.Fetcher.fetch(code),
-               events <- process_weather_data(city, data),
+               events <- process_weather_data(city_en, data),
                false <- Enum.empty?(events) do
-            ics_content = WeatherGen.ICS.generate(events)
-            save_ics(city, ics_content, output_dir)
+            city_jp = extract_city_jp(data) || city_en
+            ics_content = WeatherGen.ICS.generate(events, city_en, city_jp)
+            save_ics(city_en, ics_content, output_dir)
           else
             nil -> :ok
-            true -> Logger.warning("#{city} のイベントを解析できませんでした。")
+            true -> Logger.warning("#{city_en} のイベントを解析できませんでした。")
             _ -> :ok
           end
         end
       end
     end
 
-    defp process_weather_data(city_name, weather_data) do
+    defp extract_city_jp(weather_data) do
+      try do
+         weather_data
+         |> Enum.at(1) # 週間予報のブロック
+         |> Map.get("tempAverage", %{})
+         |> Map.get("areas", [])
+         |> Enum.at(0)
+         |> Map.get("area", %{})
+         |> Map.get("name")
+      rescue
+        _ -> nil
+      end
+    end
+
+    defp process_weather_data(city_name_en, weather_data) do
       # 全てのタイムシリーズデータを日付ごとに集約する
       weather_data
       |> Enum.flat_map(fn report -> report["timeSeries"] || [] end)
@@ -168,8 +267,9 @@ defmodule WeatherGen do
         merge_series_data(acc, series)
       end)
       |> Map.values()
+      |> Enum.filter(& &1.weather) # 天気情報がない日はスキップ
       |> Enum.sort_by(& &1.date)
-      |> Enum.map(&format_event(&1, city_name))
+      |> Enum.map(&format_event(&1, city_name_en))
     end
 
     defp merge_series_data(acc, %{"timeDefines" => time_defines, "areas" => areas})
@@ -212,11 +312,6 @@ defmodule WeatherGen do
     end
 
     defp update_weather(data, true, _, area, i) do
-       # 天気テキストがあれば優先して設定、ただし既存のテキストがある場合は(詳細なReport0を維持するために)上書きしない判断も可能だが
-       # Report0(詳細) -> Report1(コードのみ) の順の場合、詳細を残したい。
-       # JMAのJSONはリスト順なので通常 Report0 が先。
-       # したがって、既に値がある場合は上書きしない、または明示的に詳細な方を優先するロジックにする。
-       # ここでは「nilなら設定」とする。
        if data.weather == nil do
          %{data | weather: Enum.at(area["weathers"], i) |> String.replace("\u3000", " ") }
        else
@@ -247,43 +342,79 @@ defmodule WeatherGen do
     end
     defp update_pop(data, _, _, _), do: data
 
-    defp update_temps(data, true, _, area, i) do
+    defp update_temps(data, has_min, has_max, area, i) do
+      data
+      |> update_temp_min(has_min, area, i)
+      |> update_temp_max(has_max, area, i)
+    end
+
+    defp update_temp_min(data, true, area, i) do
       min = Enum.at(area["tempsMin"], i)
       if min != "" and min != nil, do: %{data | min: min}, else: data
     end
-    defp update_temps(data, _, true, area, i) do
+    defp update_temp_min(data, _, _, _), do: data
+
+    defp update_temp_max(data, true, area, i) do
       max = Enum.at(area["tempsMax"], i)
       if max != "" and max != nil, do: %{data | max: max}, else: data
     end
-    defp update_temps(data, _, _, _, _), do: data
+    defp update_temp_max(data, _, _, _), do: data
 
 
-    defp format_event(day_data, city_name) do
-      day_str = "#{day_data.date.month}月 #{day_data.date.day}日 (#{day_of_week_jp(day_data.date)})"
 
+    defp format_event(day_data, city_name_en) do
       weather_text = day_data.weather || "情報なし"
-      pop_text = if day_data.pop, do: "#{day_data.pop}%", else: "---"
-      min_text = day_data.min || "-"
-      max_text = day_data.max || "-"
+      
+      # 温度の有無チェック
+      has_temps = day_data.min != nil and day_data.max != nil
+      
+      # Summaryの作成
+      summary = if has_temps do
+        "#{weather_text} #{day_data.max}℃/#{day_data.min}℃"
+      else
+        "#{weather_text}"
+      end
 
-      summary_temp = "#{max_text}°C/#{min_text}°C"
+      # Descriptionの作成
+      # 天気は{weather}
+      desc_parts = ["天気は#{weather_text}"]
+      
+      # 降水確率
+      desc_parts = if day_data.pop do
+        desc_parts ++ ["\\n降水確率は#{day_data.pop}%"]
+      else
+        desc_parts
+      end
+      
+      # 最高気温
+      desc_parts = if day_data.max do
+        desc_parts ++ ["\\n最高気温は#{day_data.max}℃"]
+      else
+        desc_parts
+      end
+      
+      # 最低気温
+      desc_parts = if day_data.min do
+        desc_parts ++ ["\\n最低気温は#{day_data.min}℃"]
+      else
+        desc_parts
+      end
+      
+      # 結び
+      description = Enum.join(desc_parts, "")
 
-      # サマリー形式: 天気 最高/最低
-      summary = "#{weather_text} #{summary_temp}"
+      date_str = String.replace(Date.to_string(day_data.date), "-", "")
+      next_day = Date.add(day_data.date, 1) |> Date.to_string() |> String.replace("-", "")
+      
+      city_lower = String.downcase(city_name_en)
 
-      # 詳細文を作成
-      description = "天気は#{weather_text}、降水確率は#{pop_text}、最高気温は#{max_text}°C、最低気温は#{min_text}°Cでしょう。"
-
-      %WeatherGen.Event{
-        start_date: String.replace(Date.to_string(day_data.date), "-", ""),
+      %{
+        uid: "jma-weather-ical-#{city_lower}-#{date_str}",
+        start_date: date_str,
+        end_date: next_day,
         summary: summary,
-        description: "#{description}\\n出典: 気象庁"
+        description: description
       }
-    end
-
-    defp day_of_week_jp(date) do
-      days = %{1 => "月", 2 => "火", 3 => "水", 4 => "木", 5 => "金", 6 => "土", 7 => "日"}
-      Map.get(days, Date.day_of_week(date), "")
     end
 
     defp save_ics(city_name, content, output_dir) do

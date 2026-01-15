@@ -14,14 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t weather-gen .
-
       - name: Generate iCalendar files
-        run: |
-          docker run --rm -v ${{ github.workspace }}/dist:/app/dist weather-gen
-
+        run: docker compose up
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
