@@ -46,9 +46,7 @@ defmodule WeatherGen do
     end
   end
 
-  defmodule Event do
-    defstruct [:start_date, :summary, :description]
-  end
+
 
   defmodule ICS do
     def generate(events, city_name_en, city_name_jp) do
