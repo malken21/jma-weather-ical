@@ -308,9 +308,16 @@ defmodule WeatherGen do
 
     defp parse_date(iso_string) do
       case DateTime.from_iso8601(iso_string) do
-        {:ok, dt, _offset} -> DateTime.to_date(dt)
+        {:ok, dt, _offset} ->
+          # JST(UTC+9)の日付として扱うために、UNIX時間に9時間足してから日付を取り出す
+          dt
+          |> DateTime.to_unix()
+          |> Kernel.+(9 * 3600)
+          |> DateTime.from_unix!()
+          |> DateTime.to_date()
         _ ->
           # 失敗時は文字列の先頭10桁を使う簡易対応
+          # 文字列がJST前提であることを仮定
           Date.from_iso8601!(String.slice(iso_string, 0, 10))
       end
     end
