@@ -59,8 +59,8 @@ defmodule WeatherGen do
         BEGIN:VEVENT
         UID:#{evt.uid}
         DESCRIPTION:#{evt.description}
-        DTSTART;VALUE=DATE:#{evt.start_date}
-        DTEND;VALUE=DATE:#{evt.end_date}
+        DTSTART:#{evt.start_date}
+        DTEND:#{evt.end_date}
         SUMMARY:#{evt.summary}
         END:VEVENT
         """
@@ -260,6 +260,9 @@ defmodule WeatherGen do
     end
 
     defp process_weather_data(city_name_en, weather_data) do
+      # 現在日時(JST)を取得
+      today = DateTime.utc_now() |> DateTime.add(9 * 3600, :second) |> DateTime.to_date()
+
       # 全てのタイムシリーズデータを日付ごとに集約する
       weather_data
       |> Enum.flat_map(fn report -> report["timeSeries"] || [] end)
@@ -268,6 +271,7 @@ defmodule WeatherGen do
       end)
       |> Map.values()
       |> Enum.filter(& &1.weather) # 天気情報がない日はスキップ
+      |> Enum.filter(&(Date.compare(&1.date, today) != :lt)) # 過去の日付はスキップ
       |> Enum.sort_by(& &1.date)
       |> Enum.map(&format_event(&1, city_name_en))
     end
