@@ -1,6 +1,6 @@
 # jma-weather-ical
 
-気象庁データの取得およびiCalendar形式への変換
+気象庁データの取得して iCalendar形式へ変換
 
 ## 必要なもの
 
