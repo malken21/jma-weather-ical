@@ -242,6 +242,77 @@ defmodule WeatherGen do
         end
         # Generate index.html after processing all cities
         generate_index_html(output_dir, cities)
+        # Generate sitemap.xml
+        generate_sitemap_xml(output_dir)
+        # Generate robots.txt
+        generate_robots_txt(output_dir)
+        # Generate favicon.svg
+        generate_favicon(output_dir)
+      end
+    end
+
+    defp generate_sitemap_xml(output_dir) do
+      today = Date.to_string(Date.utc_today())
+      
+      sitemap_content = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <url>
+          <loc>https://jma-weather-ical.vercel.app/</loc>
+          <lastmod>#{today}</lastmod>
+          <changefreq>daily</changefreq>
+          <priority>1.0</priority>
+        </url>
+      </urlset>
+      """
+      |> String.trim()
+
+      File.mkdir_p!(output_dir)
+      filename = Path.join(output_dir, "sitemap.xml")
+      case File.write(filename, sitemap_content) do
+        :ok -> Logger.info("Generated #{filename}")
+        {:error, reason} -> Logger.error("Failed to write file #{filename}: #{inspect(reason)}")
+      end
+    end
+
+    defp generate_robots_txt(output_dir) do
+      content = """
+      User-agent: *
+      Allow: /
+      Sitemap: https://jma-weather-ical.vercel.app/sitemap.xml
+      """
+      
+      File.mkdir_p!(output_dir)
+      filename = Path.join(output_dir, "robots.txt")
+      case File.write(filename, content) do
+        :ok -> Logger.info("Generated #{filename}")
+        {:error, reason} -> Logger.error("Failed to write file #{filename}: #{inspect(reason)}")
+      end
+    end
+
+    defp generate_favicon(output_dir) do
+      # Simple sun icon SVG
+      content = """
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="25" fill="#FFA500" />
+        <g stroke="#FFA500" stroke-width="8" stroke-linecap="round">
+          <line x1="50" y1="10" x2="50" y2="18" />
+          <line x1="50" y1="82" x2="50" y2="90" />
+          <line x1="90" y1="50" x2="82" y2="50" />
+          <line x1="10" y1="50" x2="18" y2="50" />
+          <line x1="78.3" y1="21.7" x2="72.6" y2="27.4" />
+          <line x1="27.4" y1="72.6" x2="21.7" y2="78.3" />
+          <line x1="78.3" y1="78.3" x2="72.6" y2="72.6" />
+          <line x1="27.4" y1="27.4" x2="21.7" y2="21.7" />
+        </g>
+      </svg>
+      """
+      
+      File.mkdir_p!(output_dir)
+      filename = Path.join(output_dir, "favicon.svg")
+      case File.write(filename, content) do
+        :ok -> Logger.info("Generated #{filename}")
+        {:error, reason} -> Logger.error("Failed to write file #{filename}: #{inspect(reason)}")
       end
     end
 
@@ -262,22 +333,49 @@ defmodule WeatherGen do
       <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>JMA Weather iCal</title>
+          <title>JMA Weather iCal - 気象庁天気予報iCalendarデータ</title>
+          <meta name="description" content="気象庁の天気予報データをiCalendar形式(.ics)で提供します。GoogleカレンダーやOutlookなどで日本の天気予報を確認できます。">
+          <meta name="keywords" content="天気予報, iCalendar, ics, カレンダー, 気象庁, API, 自動更新">
+          <link rel="canonical" href="https://jma-weather-ical.vercel.app/">
+          <link rel="icon" type="image/svg+xml" href="favicon.svg">
+          
+          <!-- Open Graph / Facebook -->
+          <meta property="og:type" content="website">
+          <meta property="og:url" content="https://jma-weather-ical.vercel.app/">
+          <meta property="og:title" content="JMA Weather iCal - 気象庁天気予報iCalendarデータ">
+          <meta property="og:description" content="気象庁の天気予報データをiCalendar形式(.ics)で提供します。">
+          
+          <!-- Twitter -->
+          <meta property="twitter:card" content="summary_large_image">
+          <meta property="twitter:title" content="JMA Weather iCal - 気象庁天気予報iCalendarデータ">
+          <meta property="twitter:description" content="気象庁の天気予報データをiCalendar形式(.ics)で提供します。">
+
           <style>
-              body { font-family: sans-serif; margin: 2rem; }
-              h1 { border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
-              ul { list-style-type: none; padding: 0; }
-              li { margin: 0.5rem 0; }
-              a { text-decoration: none; color: #007bff; font-weight: bold; }
-              a:hover { text-decoration: underline; }
+              body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; margin: 0; padding: 0; line-height: 1.6; color: #333; }
+              header { background-color: #f8f9fa; padding: 1rem 2rem; border-bottom: 1px solid #e9ecef; }
+              main { padding: 2rem; max-width: 800px; margin: 0 auto; }
+              h1 { margin: 0; font-size: 1.5rem; color: #2c3e50; }
+              p { margin-bottom: 1.5rem; }
+              ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+              li { margin: 0; }
+              a { display: block; padding: 0.5rem 1rem; background-color: #e9ecef; border-radius: 4px; text-decoration: none; color: #495057; text-align: center; transition: background-color 0.2s; }
+              a:hover { background-color: #dee2e6; text-decoration: none; color: #212529; }
+              footer { text-align: center; padding: 2rem; background-color: #f8f9fa; border-top: 1px solid #e9ecef; margin-top: 2rem; font-size: 0.875rem; color: #6c757d; }
           </style>
       </head>
       <body>
-          <h1>JMA Weather iCal</h1>
-          <p>以下のリンクからiCalendar形式の天気予報データを取得できます。</p>
-          <ul>
-              #{list_items}
-          </ul>
+          <header>
+              <h1>JMA Weather iCal</h1>
+          </header>
+          <main>
+              <p>以下のリンクから、日本各地のiCalendar形式 (.ics) 天気予報データを取得できます。カレンダーアプリに登録してご活用ください。</p>
+              <ul>
+                  #{list_items}
+              </ul>
+          </main>
+          <footer>
+              <p>&copy; #{Date.utc_today().year} JMA Weather iCal. Data source: Japan Meteorological Agency.</p>
+          </footer>
       </body>
       </html>
       """
