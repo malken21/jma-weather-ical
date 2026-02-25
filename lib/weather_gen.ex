@@ -55,11 +55,12 @@ defmodule WeatherGen do
       events_content = Enum.map(events, fn evt ->
         """
         BEGIN:VEVENT
-        UID:#{evt.uid}
+        UID:#{evt.uid}@jma-weather-ical.marumasa.dev
         DESCRIPTION:#{evt.description}
-        DTSTART:#{evt.start_date}
-        DTEND:#{evt.end_date}
+        DTSTART;VALUE=DATE:#{evt.start_date}
+        DTEND;VALUE=DATE:#{evt.end_date}
         SUMMARY:#{evt.summary}
+        TRANSP:TRANSPARENT
         END:VEVENT
         """
         |> String.trim()
