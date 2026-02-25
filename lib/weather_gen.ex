@@ -55,7 +55,7 @@ defmodule WeatherGen do
       events_content = Enum.map(events, fn evt ->
         """
         BEGIN:VEVENT
-        UID:#{evt.uid}@jma-weather-ical.marumasa.dev
+        UID:#{evt.uid}
         DESCRIPTION:#{evt.description}
         DTSTART;VALUE=DATE:#{evt.start_date}
         DTEND;VALUE=DATE:#{evt.end_date}
@@ -72,7 +72,6 @@ defmodule WeatherGen do
       VERSION:2.0
       PRODID:jma-weather-ical
       CALSCALE:GREGORIAN
-      METHOD:PUBLISH
       X-WR-CALNAME:週間天気予報 #{city_name_jp}
       X-WR-TIMEZONE:Asia/Tokyo
       #{events_content}
